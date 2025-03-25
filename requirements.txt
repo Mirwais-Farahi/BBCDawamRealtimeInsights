@@ -1,0 +1,10 @@
+streamlit
+streamlit-option-menu
+streamlit-extras
+pandas
+plotly
+koboextractor
+openpyxl
+seaborn
+geopy
+tabulate
