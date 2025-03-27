@@ -32,13 +32,12 @@ def home():
     st.title("Welcome to the BBC - Darman Reach and Engagement Data Dashboard!")
     st.markdown(
         """
-        This application provides insights into various datasets collected from field surveys.
-        Use the navigation menu on the left to select a project and explore the data.
+        This application provides insights into BBC Darman collected data from field surveys.
+        Use the navigation menu on the left to explore the data.
 
         ### Features:
-        - Data filtering
-        - Statistical analysis
-        - Visual data representation
+        - Real-time Data Tracker
+        - Data Quality Analaysis
         """
     )
 
