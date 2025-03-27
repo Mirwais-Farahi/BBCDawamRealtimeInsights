@@ -29,7 +29,7 @@ def load_data(selected, submitted_after):
     dataset_load = load_dataset(selected, submitted_after=submitted_after)
 
 def home():
-    st.title("Welcome to the BBC - Darman Reach and Engagement Data Dashboard!")
+    st.title("BBC - Darman Reach and Engagement Data Dashboard")
     st.markdown(
         """
         This application provides insights into BBC Darman collected data from field surveys.
