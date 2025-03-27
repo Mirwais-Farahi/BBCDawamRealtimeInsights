@@ -268,7 +268,7 @@ def tracker():
 def data_quality_review():
     global dataset_load
     data = dataset_load.copy()
-    st.write(data.columns.tolist())
+    # st.write(data.columns.tolist())
     geo_column = 'start-geopoint'
     with st.expander("GPS LOCATION ANALYSIS"):
         if st.button("Add Location Data"):
