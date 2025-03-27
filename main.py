@@ -64,10 +64,24 @@ def tracker():
             st.metric(label="Male / Female (%)", value=value, help="Percentage of Male and Female respondents")
 
         with col3:
-            st.metric(label="Original vs Booster", value="0 / 0", help="Count of original vs booster surveys")
+            col_name = 'respondent_category'
+            if col_name in data.columns:
+                original_pct = (data[col_name] == 'Regular_case').mean() * 100
+                booster_pct = (data[col_name] == 'Boster_case').mean() * 100
+                sample_category = f"{original_pct:.1f} / {booster_pct:.1f}"
+            else:
+                sample_category = "0% / 0%"
+            st.metric(label="Original vs Booster %", value=sample_category, help="Percentage of original vs booster surveys")
+
+        # Call function and count surveys < 30 mins, only if columns exist
+        short_survey_count = len(filter_short_surveys(data, 'start', 'end')) if {'start', 'end'}.issubset(data.columns) else 0
 
         with col4:
-            st.metric(label="Surveys < 30 mins", value="0", help="Number of surveys completed in less than 30 mins")
+            st.metric(
+                label="Surveys < 30 mins",
+                value=short_survey_count,
+                help="Number of surveys completed in less than 30 mins"
+            )
 
         style_metric_cards(
             background_color="#FFFFFF",
@@ -254,7 +268,7 @@ def tracker():
 def data_quality_review():
     global dataset_load
     data = dataset_load.copy()
-    # st.write(data.columns.tolist())
+    st.write(data.columns.tolist())
     geo_column = 'start-geopoint'
     with st.expander("GPS LOCATION ANALYSIS"):
         if st.button("Add Location Data"):
@@ -270,15 +284,20 @@ def data_quality_review():
         start_column = 'start'
         end_column = 'end'
 
-        # Step 3: Call the function to filter short surveys
-        short_survey_data = filter_short_surveys(data, start_column, end_column)
+        # Check if required columns exist in the DataFrame
+        if start_column in data.columns and end_column in data.columns:
+            # Step 3: Call the function to filter short surveys
+            short_survey_data = filter_short_surveys(data, start_column, end_column)
 
-        # Display the filtered results
-        if not short_survey_data.empty:
-            st.write("Surveys completed in less than 30 minutes:")
-            st.dataframe(short_survey_data)  # Display the filtered surveys
+            # Display the filtered results
+            if not short_survey_data.empty:
+                st.write("Surveys completed in less than 30 minutes:")
+                st.dataframe(short_survey_data)
+            else:
+                st.write("No surveys found that took less than 30 minutes.")
         else:
-            st.write("No surveys found that took less than 30 minutes.")
+            missing_cols = [col for col in [start_column, end_column] if col not in data.columns]
+            st.warning(f"Missing required columns: {', '.join(missing_cols)}")
 
 def sidebar():
     with st.sidebar:
