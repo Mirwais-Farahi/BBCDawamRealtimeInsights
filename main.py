@@ -261,7 +261,109 @@ def tracker():
 
         else:
             st.warning("Province and District columns are missing in the dataset.")
+    
+        # --- New Section: Radio Listenership by Province ---
+        st.markdown(
+            """
+            <div style="background-color:#005055;border-radius:8px;margin-top:20px;margin-bottom:10px;">
+                <h3 style="color:#fff;padding-left:10px;font-size:18px;">Radio Listenership on Health, Water & Nutrition by Province</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
+        # Define the column for the radio question
+        radio_col = 'section_5_Reach_and_engagement/_5_1_darman_reach_and_engagement/listened_health_nutrition_radio'
+
+        # Convert to numeric and drop invalid values
+        data[radio_col] = pd.to_numeric(data[radio_col], errors='coerce')
+        data_clean = data.dropna(subset=[radio_col])
+
+        # Group and count responses by province and response value
+        freq = data_clean.groupby(['Province_Name', radio_col]).size().reset_index(name='Frequency')
+
+        # Pivot to wide format
+        freq_pivot = freq.pivot(index='Province_Name', columns=radio_col, values='Frequency').fillna(0)
+
+        # Rename columns to 'Yes' and 'No' based on mapping: 1 = Yes, 2 = No
+        freq_pivot = freq_pivot.rename(columns={1: 'Yes', 2: 'No'})
+
+        # Ensure both 'Yes' and 'No' columns exist
+        if 'Yes' not in freq_pivot.columns:
+            freq_pivot['Yes'] = 0
+        if 'No' not in freq_pivot.columns:
+            freq_pivot['No'] = 0
+
+        # Order columns
+        freq_pivot = freq_pivot[['Yes', 'No']]
+
+        # Calculate totals and percentages
+        freq_pivot['Total'] = freq_pivot['Yes'] + freq_pivot['No']
+        freq_pivot['Yes (%)'] = (freq_pivot['Yes'] / freq_pivot['Total']) * 100
+        freq_pivot['No (%)'] = (freq_pivot['No'] / freq_pivot['Total']) * 100
+        freq_pivot[['Yes (%)', 'No (%)']] = freq_pivot[['Yes (%)', 'No (%)']].round(2)
+
+        # Reset index for display
+        freq_display = freq_pivot.reset_index()
+
+        # --- Split layout for table and pie chart ---
+        col1, col2 = st.columns(2)
+
+        # Left: Table
+        with col1:
+            st.dataframe(freq_display, use_container_width=True)
+
+        # Right: Pie chart of overall totals
+        with col2:
+            overall_counts = data_clean[radio_col].value_counts().sort_index()
+            labels = ['Yes', 'No']
+            values = [overall_counts.get(1, 0), overall_counts.get(2, 0)]
+
+            fig, ax = plt.subplots()
+            ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=90)
+            ax.axis('equal')
+            st.pyplot(fig)
+    
+        # --- New Section: Radio Stations Tuned for Darman Programme ---
+        st.markdown(
+            """
+            <div style="background-color:#005055;border-radius:8px;margin-top:20px;margin-bottom:10px;">
+                <h3 style="color:#fff;padding-left:10px;font-size:18px;">Radio Stations Tuned for the Darman Programme</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Define the radio name column
+        radio_station_col = 'section_5_Reach_and_engagement/_5_1_darman_reach_and_engagement/darman_radio_station'
+        # Step 1: Drop NaNs and blank strings from radio_name
+        data_radio = data[data[radio_station_col].notna()]
+        data_radio[radio_station_col] = data_radio[radio_station_col].astype(str)
+        data_radio = data_radio[data_radio[radio_station_col].str.strip() != '']
+
+        # Step 2: Map code values to labels
+        mapping_dict = {'87': 'Other', '88': "Don't know"}
+        data_radio[radio_station_col] = data_radio[radio_station_col].replace(mapping_dict)
+
+        # Step 3: Group by radio station and count listeners
+        station_freq = data_radio.groupby(radio_station_col).size().reset_index(name='Listeners')
+
+        # Step 4: Calculate percentage
+        total_listeners = station_freq['Listeners'].sum()
+        station_freq['Listeners (%)'] = (station_freq['Listeners'] / total_listeners * 100).round(2)
+
+        # Step 5: List of provinces where each radio station was heard
+        province_map = data_radio.groupby(radio_station_col)['Province_Name'].unique().reset_index()
+        province_map['Heard In Provinces'] = province_map['Province_Name'].apply(lambda x: ', '.join(sorted(x)))
+        province_map.drop(columns='Province_Name', inplace=True)
+
+        # Step 6: Merge and format table
+        station_summary = pd.merge(station_freq, province_map, on=radio_station_col)
+        station_summary = station_summary.rename(columns={radio_station_col: 'Radio Station'})
+        station_summary = station_summary.sort_values(by='Listeners', ascending=False).reset_index(drop=True)
+
+        # Step 7: Show the table
+        st.dataframe(station_summary, use_container_width=True)
     else:
         st.warning("Dataset not loaded yet. Please check your data loading.")
 
