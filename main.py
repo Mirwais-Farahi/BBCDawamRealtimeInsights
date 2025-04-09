@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 import matplotlib.pyplot as plt
 import seaborn as sns
 from streamlit_option_menu import option_menu
@@ -7,9 +8,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 from datetime import datetime
 from data_loader import load_dataset
 from gis_analysis import add_location_columns
-from data_analysis import filter_short_surveys, check_data_consistency
-from data_visualization import plot_data_quality_issues
-
+from data_analysis import filter_short_surveys
 
 st.set_page_config(page_title="Dashboard", page_icon="🌍", layout="wide")
 
@@ -366,6 +365,27 @@ def tracker():
         st.dataframe(station_summary, use_container_width=True)
     else:
         st.warning("Dataset not loaded yet. Please check your data loading.")
+
+    # Download Excel format dataset
+    st.title("Download KoBo English XLSX")
+    option = st.selectbox("Select form:", ["Data"])
+    submitted_after = st.date_input("Submitted After (optional):", value=None)
+
+    if st.button("Fetch and Prepare File"):
+        df = load_dataset(option, submitted_after=submitted_after if submitted_after else None)
+        if df is not None:
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+                df.to_excel(writer, index=False)
+            st.success("✅ Data is ready!")
+            st.download_button(
+                label="📥 Download English XLSX",
+                data=buffer.getvalue(),
+                file_name=f"{option}_english.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        else:
+            st.error("⚠️ No data found.")
 
 def data_quality_review():
     global dataset_load
