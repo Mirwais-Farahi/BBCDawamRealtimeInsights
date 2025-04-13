@@ -265,6 +265,40 @@ def tracker():
         st.markdown(
             """
             <div style="background-color:#005055;border-radius:8px;margin-top:20px;margin-bottom:10px;">
+                <h3 style="color:#fff;padding-left:10px;font-size:18px;">Statistics of Regular/Booster Data</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Fill empty respondent_category values with 'Regular_case'
+        data['respondent_category'] = data['respondent_category'].fillna('Regular_case')
+
+        # Group by Province_Name and respondent_category, count cases
+        grouped = data.groupby(['Province_Name', 'respondent_category']).size().unstack(fill_value=0)
+
+        # Ensure columns exist
+        for col in ['Regular_case', 'Boster_case']:
+            if col not in grouped.columns:
+                grouped[col] = 0
+
+        # Calculate Total
+        grouped['Total'] = grouped['Regular_case'] + grouped['Boster_case']
+
+        # Reset index and rename columns
+        grouped.reset_index(inplace=True)
+        grouped.columns = ['Province Name', 'Boster Case', 'Regular Case', 'Total']
+
+        # Reorder columns
+        grouped = grouped[['Province Name', 'Regular Case', 'Boster Case', 'Total']]
+
+        # Display the final dataframe using Streamlit
+        st.dataframe(grouped, use_container_width=True)
+
+        # --- New Section: Radio Listenership by Province ---
+        st.markdown(
+            """
+            <div style="background-color:#005055;border-radius:8px;margin-top:20px;margin-bottom:10px;">
                 <h3 style="color:#fff;padding-left:10px;font-size:18px;">Radio Listenership on Health, Water & Nutrition by Province</h3>
             </div>
             """,
@@ -390,7 +424,7 @@ def tracker():
 def data_quality_review():
     global dataset_load
     data = dataset_load.copy()
-    # st.write(data.columns.tolist())
+    st.write(data.columns.tolist())
     geo_column = 'start-geopoint'
     with st.expander("GPS LOCATION ANALYSIS"):
         if st.button("Add Location Data"):
